@@ -11,9 +11,9 @@ It is just a helpful script that I use almost everyday. I also attempted to deve
 Install requirements:
 > pip3 pandas termcolor
 
-##How to run it
-'''
+## How to run it
+```
 python3 split.py example.csv
 python3 split.py example.xlsx
-'''
+```
 
