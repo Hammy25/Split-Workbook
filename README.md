@@ -9,7 +9,7 @@ It is just a helpful script that I use almost everyday. I also attempted to deve
 3. Termcolor
 
 Install requirements:
-> pip3 pandas termcolor
+> pip3 install pandas termcolor
 
 ## How to run it
 ```
