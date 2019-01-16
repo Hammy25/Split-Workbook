@@ -1,0 +1,8 @@
+#folders to igonre
+__pycache__
+*_files/
+
+#files to ignore
+*.csv
+*.xlsx
+
