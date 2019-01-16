@@ -12,8 +12,8 @@ Install requirements:
 > pip3 pandas termcolor
 
 ##How to run it
-'''
+```
 python3 split.py example.csv
 python3 split.py example.xlsx
-'''
+```
 
