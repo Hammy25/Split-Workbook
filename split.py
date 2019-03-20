@@ -35,12 +35,81 @@ def choose_headings(headings):
     try:
         choice = int(input("Choose a coloumn: (number of coloumn)"))
     except ValueError:
-        cprint("Warning: Kindly enter a digit.", "yellow")
+        cprint("[!!]Warning: Kindly enter a digit.", "yellow")
         choose_headings(headings)
     if((not(choice in range(1, len(headings) + 1)))):
-        cprint("Warning: Your choice is not valid.", "yellow")
+        cprint("[!!]Warning: Your choice is not valid.", "yellow")
         choose_headings(headings)
     return choice - 1
+
+
+def get_number_of_records(df):
+    """
+    Get the number of records in a dataframe
+    """
+    return len(df)
+
+
+def choose_number_of_records():
+    """
+    Choose how many records should be in one document
+    """
+    try:
+        choice = int(input("How many records should be in one file?"))
+    except ValueError:
+        cprint("[!!]Warning: Kindly enter a digit.", "yellow")
+        choose_number_of_records()
+    return choice
+
+
+def split_to_csvs_number(file_path):
+    """
+    Write csvs based on number of records per file specified
+    """
+    data = read_doc(file_path)
+    new_path_folder = Path(file_path + "_files")
+    new_path_folder.mkdir(parents=True, exist_ok=True)
+    length_of_doc = get_number_of_records(data)
+    cprint("[!]Info: The document has " +
+           str(length_of_doc) + " records.\n", "green")
+    records_per_file = choose_number_of_records()
+    if(records_per_file >= length_of_doc):
+        cprint("[!!!]Error: You entered a number larger than the number of records.", "red")
+        split_to_csvs_number(file_path)
+    number_of_final_files = length_of_doc // records_per_file
+    extra_records = length_of_doc % records_per_file
+    if (extra_records == 0):
+        first_index = 0
+        last_index = records_per_file
+        for i in range(number_of_final_files):
+            doc_name = os.path.basename(file_path).split(".")[0]
+            final_doc_name = doc_name + "-_" + str(i) + ".csv"
+            final_d_path = new_path_folder.joinpath(final_doc_name)
+            data[first_index:last_index].to_csv(
+                final_d_path, encoding="utf-8", index=False)
+            first_index = last_index
+            last_index = last_index + records_per_file
+    else:
+        number_of_final_files = number_of_final_files + 1
+        print("Number of files: " + str(number_of_final_files))
+        first_index = 0
+        print("Records per file: " + str(records_per_file))
+        last_index = records_per_file
+        for i in range(number_of_final_files):
+            doc_name = os.path.basename(file_path).split(".")[0]
+            final_doc_name = doc_name + "-_" + str(i) + ".csv"
+            final_d_path = new_path_folder.joinpath(final_doc_name)
+            data[first_index:last_index].to_csv(
+                final_d_path, encoding="utf-8", index=False)
+            first_index = last_index
+            last_index = last_index + records_per_file
+        len_doc = length_of_doc - \
+            (number_of_final_files - 1) * records_per_file
+        cprint("[!]Info: The last file has " +
+               str(len_doc) + " records.", "green")
+    cprint("\n[!] Successful!", "green")
+    cprint("[!] Check out " + os.path.abspath(new_path_folder) +
+           " for your files.\n", "green")
 
 
 def split_to_csvs(file_path):
@@ -61,21 +130,41 @@ def split_to_csvs(file_path):
             final_data = data.loc[data[col_name] == i]
             final_d_path = new_path_folder.joinpath(final_doc_name)
             final_data.to_csv(final_d_path, encoding="utf-8", index=False)
-    cprint("\n[!] Successful!", "green")
-    cprint("[!] Check out " + os.path.abspath(new_path_folder) +
+    cprint("\n[!] Info: Successful!", "green")
+    cprint("[!] Info: Check out " + os.path.abspath(new_path_folder) +
            " for your files.\n", "green")
 
 
 def main():
+    choice = 0
+    choices = [1, 2]
     if(len(sys.argv) >= 2):
         for file in sys.argv[1:]:
-            cprint("\n[!] Working with file: " +
+            cprint("\n[!] Info: Working with file: " +
                    str(os.path.basename(file)) + "\n", "green")
+            cprint("How do wish to split the file: ", "green")
             try:
-                split_to_csvs(os.path.abspath(file))
-            except FileNotFoundError:
-                cprint("[!!!] Error: \' " + str(os.path.abspath(file)) +
-                       " \'" + " doesn\'t seem to exist.", "red")
+                choice = int(
+                    input("1.Through coloumns.\n2.Through number of records.\nEnter choice: "))
+            except ValueError:
+                cprint("[!!]Warning: You didn\'t enter a digit.", "red")
+                main()
+            if choice in choices:
+                if (choice == 1):
+                    try:
+                        split_to_csvs(os.path.abspath(file))
+                    except FileNotFoundError:
+                        cprint("[!!!]Error: \' " + str(os.path.abspath(file)) +
+                               " \'" + " doesn\'t seem to exist.", "red")
+                elif(choice == 2):
+                    try:
+                        split_to_csvs_number(os.path.abspath(file))
+                    except FileNotFoundError:
+                        cprint("[!!!]Error: \' " + str(os.path.abspath(file)) +
+                               " \'" + " doesn\'t seem to exist.", "red")
+            else:
+                cprint("[!!]Warning: You didn't choose a valid option:", "red")
+                main()
 
 
 if __name__ == "__main__":
