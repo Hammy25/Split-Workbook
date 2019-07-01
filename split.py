@@ -62,77 +62,112 @@ def choose_number_of_records():
     return choice
 
 
+def make_new_directory(file_path):
+    """
+    Make a new directory
+    """
+    n_path_folder = Path(file_path + "_files")
+    n_path_folder.mkdir(parents=True, exist_ok=True)
+    return n_path_folder
+
+
+def determine_name_of_file(file_path, value, new_folder):
+    """
+    Determine name of file being written.
+    """
+    if(isinstance(value, str)):
+        pass
+    else:
+        value = str(value)
+    doc_name = os.path.basename(file_path).split(".")[0]
+    final_doc_name = doc_name + "-_" + value + ".csv"
+    final_d_path = new_folder.joinpath(final_doc_name)
+    return final_d_path
+
+
+def write_a_file(data_to_write, file_path, value, n_folder):
+    """
+    Write one csv.
+    """
+    final_d_path = determine_name_of_file(file_path, value, n_folder)
+    data_to_write.to_csv(final_d_path, encoding="utf-8", index=False)
+
+
+def write_csvs_from_range(records_per_file, no_of_files, file_path, new_folder, data):
+    """
+    Write csvs from a range of data.
+    """
+    first_index = 0
+    last_index = records_per_file
+    for i in range(no_of_files):
+        data_to_write = data[first_index:last_index]
+        write_a_file(data_to_write, file_path, i, new_folder)
+        first_index = last_index
+        last_index = last_index + records_per_file
+
+
+def write_csvs_from_coloumn(unique_values, file_path, col_name, new_folder, data):
+    """
+    Write csvs based on the coloumn chosen.
+    """
+    for i in unique_values:
+        if(not(pd.isnull(i))):
+            final_data = data.loc[data[col_name] == i]
+            write_a_file(final_data, file_path, i, new_folder)
+
+
+def print_out_success_message(new_path):
+    """
+    Print success message
+    """
+    cprint("\n[!] Successful!", "green")
+    cprint("[!] Check out " + os.path.abspath(new_path) +
+           " for your files.\n", "green")
+
+
 def split_to_csvs_number(file_path):
     """
     Write csvs based on number of records per file specified
     """
     data = read_doc(file_path)
-    new_path_folder = Path(file_path + "_files")
-    new_path_folder.mkdir(parents=True, exist_ok=True)
+    new_path_folder = make_new_directory(file_path)
     length_of_doc = get_number_of_records(data)
     cprint("[!]Info: The document has " +
            str(length_of_doc) + " records.\n", "green")
     records_per_file = choose_number_of_records()
     if(records_per_file >= length_of_doc):
-        cprint("[!!!]Error: You entered a number larger than the number of records.", "red")
+        cprint(
+            "[!!!]Error: You entered a number larger than the number of records.", "red")
         split_to_csvs_number(file_path)
     number_of_final_files = length_of_doc // records_per_file
     extra_records = length_of_doc % records_per_file
     if (extra_records == 0):
-        first_index = 0
-        last_index = records_per_file
-        for i in range(number_of_final_files):
-            doc_name = os.path.basename(file_path).split(".")[0]
-            final_doc_name = doc_name + "-_" + str(i) + ".csv"
-            final_d_path = new_path_folder.joinpath(final_doc_name)
-            data[first_index:last_index].to_csv(
-                final_d_path, encoding="utf-8", index=False)
-            first_index = last_index
-            last_index = last_index + records_per_file
+        write_csvs_from_range(
+            records_per_file, number_of_final_files, file_path, new_path_folder, data)
     else:
         number_of_final_files = number_of_final_files + 1
-        print("Number of files: " + str(number_of_final_files))
-        first_index = 0
-        print("Records per file: " + str(records_per_file))
-        last_index = records_per_file
-        for i in range(number_of_final_files):
-            doc_name = os.path.basename(file_path).split(".")[0]
-            final_doc_name = doc_name + "-_" + str(i) + ".csv"
-            final_d_path = new_path_folder.joinpath(final_doc_name)
-            data[first_index:last_index].to_csv(
-                final_d_path, encoding="utf-8", index=False)
-            first_index = last_index
-            last_index = last_index + records_per_file
+        write_csvs_from_range(
+            records_per_file, number_of_final_files, file_path, new_path_folder, data)
         len_doc = length_of_doc - \
             (number_of_final_files - 1) * records_per_file
         cprint("[!]Info: The last file has " +
                str(len_doc) + " records.", "green")
-    cprint("\n[!] Successful!", "green")
-    cprint("[!] Check out " + os.path.abspath(new_path_folder) +
-           " for your files.\n", "green")
+    print_out_success_message(new_path_folder)
 
 
 def split_to_csvs(file_path):
     """
-    Split the document to many csvs.
+    Split the document to many csvs (based on coloumns)
     """
     data = read_doc(file_path)
     headings = get_headings(data)
     choice = choose_headings(headings)
-    new_path_folder = Path(file_path + "_files")
-    new_path_folder.mkdir(parents=True, exist_ok=True)
+    new_path_folder = make_new_directory(file_path)
     col_name = headings[choice]
     unique_values = set(data[col_name])
-    for i in unique_values:
-        if(not(pd.isnull(i))):
-            doc_name = os.path.basename(file_path).split(".")[0]
-            final_doc_name = doc_name + "-" + str(i) + ".csv"
-            final_data = data.loc[data[col_name] == i]
-            final_d_path = new_path_folder.joinpath(final_doc_name)
-            final_data.to_csv(final_d_path, encoding="utf-8", index=False)
-    cprint("\n[!] Info: Successful!", "green")
-    cprint("[!] Info: Check out " + os.path.abspath(new_path_folder) +
-           " for your files.\n", "green")
+    write_csvs_from_coloumn(unique_values, file_path,
+                            col_name, new_path_folder, data)
+    print_out_success_message(new_path_folder)
 
 
 def main():
